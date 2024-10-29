@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <title>Emisor de Audio</title>
+</head>
+<body>
+  <h1>Emisor de Audio</h1>
+  <button id="start">Iniciar Transmisión</button>
+  <button id="stop" disabled>Detener Transmisión</button>
+
+  <script>
+    const startButton = document.getElementById('start');
+    const stopButton = document.getElementById('stop');
+    let ws;
+    let mediaRecorder;
+
+    startButton.onclick = async () => {
+      startButton.disabled = true;
+      stopButton.disabled = false;
+
+      try {
+        // Obtener acceso al micrófono
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+
+        // Crear conexión WebSocket
+        ws = new WebSocket('ws://localhost:8080');
+
+        ws.onopen = () => {
+          console.log('Conectado al servidor WebSocket');
+
+          // Crear MediaRecorder para grabar el audio
+          mediaRecorder = new MediaRecorder(stream);
+
+          // Enviar datos de audio al servidor cuando estén disponibles
+          mediaRecorder.ondataavailable = (event) => {
+            if (event.data.size > 0 && ws.readyState === WebSocket.OPEN) {
+              ws.send(event.data);
+            }
+          };
+
+          // Iniciar la grabación y establecer el intervalo de tiempo para los fragmentos
+          mediaRecorder.start(100);
+        };
+
+        ws.onerror = (error) => {
+          console.error('Error en el websocket:', error);
+        };
+
+        ws.onclose = () => {
+          console.warn('Error en la conexion.');
+        };
+
+      } catch (error) {
+        console.error('Error con el microfono:', error);
+        startButton.disabled = false;
+        stopButton.disabled = true;
+      }
+    };
+
+    stopButton.onclick = () => {
+      stopButton.disabled = true;
+      startButton.disabled = false;
+
+      // Detener la grabacion si está grabando
+      if (mediaRecorder && mediaRecorder.state === "recording") {
+        mediaRecorder.stop();
+      }
+
+      // Cerrar la conexion al websocket
+      if (ws && ws.readyState === WebSocket.OPEN) {
+        ws.close();
+      }
+    };
+  </script>
+</body>
+</html>

@@ -1,0 +1,14 @@
+{
+  "name": "receptor",
+  "version": "1.0.0",
+  "description": "Servidor WebSocket que recibe audio y lo guarda en un archivo",
+  "main": "server.js",
+  "dependencies": {
+    "ws": "^7.5.5"
+  },
+  "scripts": {
+    "start": "node server.js"
+  },
+  "author": "",
+  "license": "ISC"
+}
